@@ -29,24 +29,34 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   var location = new Location();
-  String rua = "", numero = "", bairro = "", cep = "", estado = "";
+  String rua = "", numero = "", bairro = "", cep = "", estado = "", observacao = "";
+  double precisao;
 
   Future locationGps() async {
     location
         .onLocationChanged()
         .listen((Map<String, double> currentLocation) async {
-      final coordinates = new Coordinates(
-          currentLocation["latitude"], currentLocation["longitude"]);
-      List<Address> addresses =
-          await Geocoder.local.findAddressesFromCoordinates(coordinates);
 
       setState(() {
-        rua = addresses.first.thoroughfare;
-        numero = addresses.first.subThoroughfare;
-        bairro = addresses.first.subLocality;
-        cep = addresses.first.postalCode;
-        estado = addresses.first.adminArea;
+        precisao = currentLocation["accuracy"];
+        observacao = "Obtendo melhor precisão...";
       });
+
+      if( precisao != null && precisao < 10.0 ) {
+        final coordinates = new Coordinates(
+            currentLocation["latitude"], currentLocation["longitude"]);
+        List<Address> addresses =
+        await Geocoder.local.findAddressesFromCoordinates(coordinates);
+
+        setState(() {
+          observacao = "";
+          rua = addresses.first.thoroughfare;
+          numero = addresses.first.subThoroughfare;
+          bairro = addresses.first.subLocality;
+          cep = addresses.first.postalCode;
+          estado = addresses.first.adminArea;
+        });
+      }
     });
   }
 
@@ -69,6 +79,8 @@ class _MyHomePageState extends State<MyHomePage> {
               },
             ),
             Column(children: <Widget>[
+              Text("Precisão: " + ( precisao == null ? "" : precisao.toStringAsFixed(2) ) + " m"),
+              Text("$observacao"),
               Text("Rua: $rua"),
               Text("Número: $numero"),
               Text("Bairro: $bairro"),
